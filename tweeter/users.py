@@ -53,12 +53,21 @@ def tweeter_user():
         print(userID)
         cursor.execute("INSERT INTO user_session(login_token, user_id) VALUES (UUID(), ?)",[userID[0],])
         conn.commit()
-        return Response("Sucessful user created",
-                        mimetype='text/plain',
+        cursor.execute("SELECT user_session.user_id, user.email, user.username, user.bio, user.birthday, user.image_URL, user_session.login_token FROM user_session INNER JOIN user ON user_session.user_id=user.id WHERE id=?",[userID[0],])
+        login_info = cursor.fetchone()
+        print(login_info)
+        login_resp = {
+            "user_id" : login_info[0],
+            "email" : login_info[1],
+            "username" : login_info[2],
+            "bio" : login_info[3],
+            "birthday" : login_info[4],
+            "image_URL" : login_info[5],
+            "loginToken" : login_info[6]
+        }
+        return Response(json.dumps(login_resp, default=str),
+                        mimetype='application/json',
                         status=200)
-        # return Response(json.dumps(, default=str),
-        #                 mimetype='application/json',
-        #                 status=409)
     except mariadb.DataError: 
         print('Something went wrong with your data')
     except mariadb.OperationalError:
