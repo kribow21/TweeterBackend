@@ -1,4 +1,4 @@
-from app import app
+from tweeter import app
 import sys
 
 if(len(sys.argv) > 1):
