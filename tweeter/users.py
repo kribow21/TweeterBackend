@@ -140,4 +140,46 @@ def tweeter_user():
                 else:
                     print('the connection never opened, nothing to close')
         else:
-            pass
+            try:
+                conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM user")
+                all_users = cursor.fetchall()
+                user_list = []
+                for user in all_users:
+                    getDict = {
+                        "userId" : user[0],
+                        "email" : user[1],
+                        "username" : user[2],
+                        "bio" : user[3],
+                        "birthday" : user[4],
+                        "imageURL" : user[5]
+                        }
+                    user_list.append(getDict)
+                return Response(json.dumps(user_list, default=str),
+                mimetype='application/json',
+                status=200)
+            except mariadb.DataError: 
+                print('Something went wrong with your data')
+            except mariadb.OperationalError:
+                print('Something wrong with the connection')
+            except mariadb.ProgrammingError:
+                print('Your query was wrong')
+            except mariadb.IntegrityError:
+                print('Your query would have broken the database and we stopped it')
+            except mariadb.InterfaceError:
+                print('Something wrong with database interface')
+            except:
+                print('Something went wrong')
+            finally:
+                if(cursor != None):
+                    cursor.close()
+                    print('cursor closed')
+                else:
+                    print('no cursor to begin with')
+                if(conn != None):   
+                    conn.rollback()
+                    conn.close()
+                    print('connection closed')
+                else:
+                    print('the connection never opened, nothing to close')
