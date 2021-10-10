@@ -145,6 +145,7 @@ def tweeter_user():
                 cursor = conn.cursor()
                 cursor.execute("SELECT * FROM user")
                 all_users = cursor.fetchall()
+                print(all_users)
                 user_list = []
                 for user in all_users:
                     getDict = {
@@ -187,8 +188,6 @@ def tweeter_user():
     elif request.method == "DELETE":
         data = request.json
         print(data)
-        user_token = data.get("loginToken")
-        print(user_token)
         user_password = data.get("password")
         print(user_password)
         sucess_del = {
@@ -202,9 +201,9 @@ def tweeter_user():
             cursor = conn.cursor()
             cursor.execute("SELECT user.password, user_session.login_token FROM user_session INNER JOIN user ON user_session.user_id=user.id WHERE password=?",[user_password,])
             user_info_for_deleteing = cursor.fetchone()
-            cursor.execute("DELETE FROM user_session WHERE login_token=?",[user_info_for_deleteing[1]])
-            cursor.execute("DELETE FROM user WHERE password=?",[user_info_for_deleteing[0]])
-            if(cursor.rowcount ==1):
+            if (user_info_for_deleteing != None):
+                cursor.execute("DELETE FROM user_session WHERE login_token=?",[user_info_for_deleteing[1]])
+                cursor.execute("DELETE FROM user WHERE password=?",[user_info_for_deleteing[0]])
                 conn.commit()
                 return Response(json.dumps(sucess_del, default=str),
                             mimetype='application/json',
@@ -237,3 +236,37 @@ def tweeter_user():
                 print('connection closed')
             else:
                 print('the connection never opened, nothing to close')
+    elif request.method == "PATCH":
+        data = request.json
+        edit_token = data.get("loginToken")
+        if (len(edit_token) == 36):
+            try:
+                conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM user_session WHERE login_token=?",[edit_token,])
+                varified_user = cursor.fetchone()
+                print(varified_user)
+            except mariadb.DataError: 
+                print('Something went wrong with your data')
+            except mariadb.OperationalError:
+                print('Something wrong with the connection')
+            except mariadb.ProgrammingError:
+                print('Your query was wrong')
+            except mariadb.IntegrityError:
+                print('Your query would have broken the database and we stopped it')
+            except mariadb.InterfaceError:
+                print('Something wrong with database interface')
+            except:
+                print('Something went wrong')
+            finally:
+                if(cursor != None):
+                    cursor.close()
+                    print('cursor closed')
+                else:
+                    print('no cursor to begin with')
+                if(conn != None):   
+                    conn.rollback()
+                    conn.close()
+                    print('connection closed')
+                else:
+                    print('the connection never opened, nothing to close')
