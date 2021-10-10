@@ -1,0 +1,76 @@
+from tweeter import app
+from flask import Flask, request, Response
+import mariadb
+import dbcreds
+import json
+import datetime
+
+
+@app.route("/api/login", methods=["POST", "DELETE"])
+def login():
+    if request.method == "POST":
+        data = request.json
+        user_email = data.get("email")
+        user_pass = data.get("password")
+        if_empty = {
+            "message" : "Enter in required data"
+        }
+        fail_login = {
+            "message" : "Failed to login"
+        }
+        if (user_email == ''):
+            return Response(json.dumps(if_empty),
+                                mimetype='application/json',
+                                status=409)
+        elif (user_pass == ''):
+            return Response(json.dumps(if_empty),
+                                mimetype='application/json',
+                                status=409)
+        try:
+            conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM user WHERE password=?",[user_pass,])
+            user_info = cursor.fetchone()
+            if (user_info != None):
+                cursor.execute("SELECT user_session.user_id, user.email, user.username, user.bio, user.birthday, user_session.login_token, user.image_URL FROM user_session INNER JOIN user ON user_session.user_id=user.id WHERE password=?",[user_pass,])
+                select_user = cursor.fetchone()
+                a_user = {
+                    "userId" : select_user[0],
+                    "email" : select_user[1],
+                    "username" : select_user[2],
+                    "bio" : select_user[3],
+                    "birthday" : select_user[4],
+                    "loginToken" : select_user[5],
+                    "imageURL" : select_user[6]
+                }
+                return Response(json.dumps(a_user, default=str),
+                                            mimetype='application/json',
+                                            status=200)
+            else:
+                return Response(json.dumps(fail_login, default=str),
+                                            mimetype='application/json',
+                                            status=409)
+        except mariadb.DataError: 
+            print('Something went wrong with your data')
+        except mariadb.OperationalError:
+            print('Something wrong with the connection')
+        except mariadb.ProgrammingError:
+            print('Your query was wrong')
+        except mariadb.IntegrityError:
+            print('Your query would have broken the database and we stopped it')
+        except mariadb.InterfaceError:
+            print('Something wrong with database interface')
+        except:
+            print('Something went wrong')
+        finally:
+            if(cursor != None):
+                cursor.close()
+                print('cursor closed')
+            else:
+                print('no cursor to begin with')
+            if(conn != None):   
+                conn.rollback()
+                conn.close()
+                print('connection closed')
+            else:
+                print('the connection never opened, nothing to close')
