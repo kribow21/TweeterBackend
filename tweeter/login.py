@@ -84,7 +84,7 @@ def login():
             "message" : "invalid token"
         }
         confirm = {
-            "message" : "valid token, OK to delete"
+            "message" : "valid token, deleted"
         }
         try:
             if (len(user_token) == 36):
