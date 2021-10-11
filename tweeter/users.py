@@ -4,7 +4,7 @@ import mariadb
 import dbcreds
 import json
 import datetime
-
+import re
 
 @app.route("/api/users", methods=["GET", "POST", "PATCH", "DELETE" ])
 def tweeter_user():
@@ -25,10 +25,14 @@ def tweeter_user():
         birthday_wrong = {
                     "message" : "Enter in correct format"
                     }
+        invalid_email = {
+            "messgae" : "please use a valid email"
+                    }
+        pattern = "[a-zA-Z0-9]+@[a-zA-Z]+\.(com|edu|net)"
         try:
             datetime.datetime.strptime(user_birthday, '%Y-%m-%d')
         except ValueError:
-            return Response(json.dumps(birthday_wrong),
+            return Response(json.dumps(birthday_wrong, default=str),
                                 mimetype='application/json',
                                 status=409)
         try:
@@ -42,6 +46,10 @@ def tweeter_user():
                                 status=409)
             elif (user_password == ''):
                 return Response(json.dumps(if_empty),
+                                mimetype='application/json',
+                                status=409)
+            if(re.search(pattern, user_email) == None):
+                return Response(json.dumps(invalid_email,default=str),
                                 mimetype='application/json',
                                 status=409)
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
@@ -236,37 +244,47 @@ def tweeter_user():
                 print('connection closed')
             else:
                 print('the connection never opened, nothing to close')
+                
     elif request.method == "PATCH":
         data = request.json
         edit_token = data.get("loginToken")
-        if (len(edit_token) == 36):
-            try:
+        patch_fail = {
+            "message" : "failed to match the login token to a profile"
+        }
+        try:
+            if (len(edit_token) == 36):
                 conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
                 cursor = conn.cursor()
                 cursor.execute("SELECT * FROM user_session WHERE login_token=?",[edit_token,])
                 varified_user = cursor.fetchone()
-                print(varified_user)
-            except mariadb.DataError: 
-                print('Something went wrong with your data')
-            except mariadb.OperationalError:
-                print('Something wrong with the connection')
-            except mariadb.ProgrammingError:
-                print('Your query was wrong')
-            except mariadb.IntegrityError:
-                print('Your query would have broken the database and we stopped it')
-            except mariadb.InterfaceError:
-                print('Something wrong with database interface')
-            except:
-                print('Something went wrong')
-            finally:
-                if(cursor != None):
-                    cursor.close()
-                    print('cursor closed')
+                if (varified_user == 1):
+                    pass
                 else:
-                    print('no cursor to begin with')
-                if(conn != None):   
-                    conn.rollback()
-                    conn.close()
-                    print('connection closed')
-                else:
-                    print('the connection never opened, nothing to close')
+                    return Response(json.dumps(patch_fail, default=str),
+                                    mimetype="application/json",
+                                    status=409)
+        except mariadb.DataError: 
+            print('Something went wrong with your data')
+        except mariadb.OperationalError:
+            print('Something wrong with the connection')
+        except mariadb.ProgrammingError:
+            print('Your query was wrong')
+        except mariadb.IntegrityError:
+            print('Your query would have broken the database and we stopped it')
+        except mariadb.InterfaceError:
+            print('Something wrong with database interface')
+        except:
+            print('Something went wrong')
+        finally:
+            if(cursor != None):
+                cursor.close()
+                print('cursor closed')
+            else:
+                print('no cursor to begin with')
+            if(conn != None):   
+                conn.rollback()
+                conn.close()
+                print('connection closed')
+            else:
+                print('the connection never opened, nothing to close')
+
