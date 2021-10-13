@@ -4,7 +4,7 @@ import mariadb
 import dbcreds
 import json
 import datetime
-
+from uuid import uuid4
 
 @app.route("/api/login", methods=["POST", "DELETE"])
 def login():
@@ -32,10 +32,14 @@ def login():
         try:
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM user WHERE password=?",[user_pass,])
+            cursor.execute("SELECT password,id from user WHERE email=?",[user_email,])
             user_info = cursor.fetchone()
+            if (user_pass == user_info[0]):
+                tokenID = uuid4().hex
+                print(user_info[1], tokenID)
+                cursor.execute("INSERT INTO user_session (login_token,user_id) VALUES (?,?)",[tokenID,user_info[1]])
             if (user_info != None):
-                cursor.execute("SELECT user_session.user_id, user.email, user.username, user.bio, user.birthday, user_session.login_token, user.image_URL FROM user_session INNER JOIN user ON user_session.user_id=user.id WHERE password=?",[user_pass,])
+                cursor.execute("SELECT user_session.user_id, user.email, user.username, user.bio, user.birthday, user_session.login_token, user.image_URL FROM user_session INNER JOIN user ON user_session.user_id=user.id WHERE user_id=?",[user_info[1],])
                 select_user = cursor.fetchone()
                 a_user = {
                     "userId" : select_user[0],
@@ -87,13 +91,16 @@ def login():
             "message" : "valid token, deleted"
         }
         try:
-            if (len(user_token) == 36):
+            if (len(user_token) == 32):
                 conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM user_session WHERE login_token=?",[user_token,])
-                return Response(json.dumps(confirm, default=str),
-                                mimetype="application/json",
-                                status=200)
+                print(user_token)
+                cursor.execute("DELETE FROM user_session WHERE login_token=?",[user_token,])
+                conn.commit()
+                if (cursor.rowcount ==1):
+                    return Response(json.dumps(confirm, default=str),
+                                    mimetype="application/json",
+                                    status=200)
             else:
                 return Response(json.dumps(invalid, default=str),
                                 mimetype="application/json",
