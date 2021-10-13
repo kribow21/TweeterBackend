@@ -27,6 +27,7 @@ def login():
         fail_login = {
             "message" : "Failed to login"
         }
+    #checks if things are empty or not correct email format before opening cursor
         if (user_email == ''):
             return Response(json.dumps(if_empty),
                                 mimetype='application/json',
@@ -44,6 +45,7 @@ def login():
             cursor = conn.cursor()
             cursor.execute("SELECT password,id from user WHERE email=?",[user_email,])
             user_info = cursor.fetchone()
+        #accounts for if password does not match or email does not match. the elif if it does match
             if(user_info == None):
                     return Response(json.dumps(fail_login, default=str),
                                             mimetype='application/json',
@@ -51,7 +53,6 @@ def login():
             elif (user_pass == user_info[0]):
                 tokenID = uuid4().hex
                 cursor.execute("INSERT INTO user_session (login_token,user_id) VALUES (?,?)",[tokenID,user_info[1]])
-
             else:
                 return Response(json.dumps(fail_login, default=str),
                                             mimetype='application/json',
