@@ -1,3 +1,4 @@
+from sys import version_info
 from tweeter import app
 from flask import Flask, request, Response
 import mariadb
@@ -5,6 +6,8 @@ import dbcreds
 import json
 import datetime
 import re
+from uuid import uuid4
+
 
 @app.route("/api/users", methods=["GET", "POST", "PATCH", "DELETE" ])
 def tweeter_user():
@@ -13,7 +16,7 @@ def tweeter_user():
 
     if request.method == "POST":
         data = request.json
-        user_email = data.get("email")         #TODO: figure out regex 
+        user_email = data.get("email")         
         user_username = data.get("username")   
         user_password = data.get("password")   
         user_birthday = data.get("birthday")
@@ -59,7 +62,8 @@ def tweeter_user():
             cursor.execute("SELECT id FROM user WHERE username=?",[user_username,])
             userID = cursor.fetchone()
             print(userID)
-            cursor.execute("INSERT INTO user_session(login_token, user_id) VALUES (UUID(), ?)",[userID[0],])
+            tokenID = uuid4().hex
+            cursor.execute("INSERT INTO user_session(login_token, user_id) VALUES (?, ?)",[tokenID, userID[0],])
             conn.commit()
         #using a join to bring together all the info i need to return to the client and then organizing it in the format expected
             cursor.execute("SELECT user_session.user_id, user.email, user.username, user.bio, user.birthday, user.image_URL, user_session.login_token FROM user_session INNER JOIN user ON user_session.user_id=user.id WHERE id=?",[userID[0],])
@@ -248,19 +252,112 @@ def tweeter_user():
     elif request.method == "PATCH":
         data = request.json
         edit_token = data.get("loginToken")
+        edit_keys = data.keys()
+        print(edit_keys)
+        edit_bio = data.get("bio")
+        print(edit_bio)
+        edit_email = data.get("email")
+        print(edit_email)
+        edit_username = data.get("username")
+        print(edit_username)
+        edit_birthday = data.get("birthday")
+        print(edit_birthday)
+        edit_img = data.get("imageURL")
+        print(edit_img)
         patch_fail = {
             "message" : "failed to match the login token to a profile"
         }
         try:
-            if (len(edit_token) == 36):
+            if (len(edit_token) == 32):
                 conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM user_session WHERE login_token=?",[edit_token,])
+                print(edit_token)
+                cursor.execute("SELECT user_id FROM user_session WHERE login_token=?",[edit_token,])
                 varified_user = cursor.fetchone()
-                if (varified_user == 1):
-                    pass
-                else:
-                    return Response(json.dumps(patch_fail, default=str),
+                print(varified_user)
+                if (len(varified_user) == 1):
+                    if "bio" in edit_keys:
+                        cursor.execute("UPDATE user set bio=? WHERE id=?",[edit_bio, varified_user[0]])
+                        conn.commit()
+                        cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
+                        user_info = cursor.fetchone()
+                        a_user = {
+                            "userId" : user_info[0],
+                            "email" : user_info[1],
+                            "username" : user_info[2],
+                            "bio" : user_info[3],
+                            "birthday" : user_info[4],
+                            "imageURL" : user_info[5],
+                        }
+                        return Response(json.dumps(a_user, default=str),
+                                                mimetype='application/json',
+                                                status=200)
+                    elif "email" in edit_keys:
+                        cursor.execute("UPDATE user set email=? WHERE id=?",[edit_email, varified_user[0]])
+                        conn.commit()
+                        cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
+                        user_info = cursor.fetchone()
+                        a_user = {
+                            "userId" : user_info[0],
+                            "email" : user_info[1],
+                            "username" : user_info[2],
+                            "bio" : user_info[3],
+                            "birthday" : user_info[4],
+                            "imageURL" : user_info[5],
+                        }
+                        return Response(json.dumps(a_user, default=str),
+                                                mimetype='application/json',
+                                                status=200)
+                    elif "username" in edit_keys:
+                        cursor.execute("UPDATE user set username=? WHERE id=?",[edit_username, varified_user[0]])
+                        conn.commit()
+                        cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
+                        user_info = cursor.fetchone()
+                        a_user = {
+                            "userId" : user_info[0],
+                            "email" : user_info[1],
+                            "username" : user_info[2],
+                            "bio" : user_info[3],
+                            "birthday" : user_info[4],
+                            "imageURL" : user_info[5],
+                        }
+                        return Response(json.dumps(a_user, default=str),
+                                                mimetype='application/json',
+                                                status=200)
+                    elif "birthday" in edit_keys:
+                        cursor.execute("UPDATE user set birthday=? WHERE id=?",[edit_birthday, varified_user[0]])
+                        conn.commit()
+                        cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
+                        user_info = cursor.fetchone()
+                        a_user = {
+                            "userId" : user_info[0],
+                            "email" : user_info[1],
+                            "username" : user_info[2],
+                            "bio" : user_info[3],
+                            "birthday" : user_info[4],
+                            "imageURL" : user_info[5],
+                        }
+                        return Response(json.dumps(a_user, default=str),
+                                                mimetype='application/json',
+                                                status=200)
+                    elif "imageURL" in edit_keys:
+                        cursor.execute("UPDATE user set image_URL=? WHERE id=?",[edit_img, varified_user[0]])
+                        conn.commit()
+                        cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
+                        user_info = cursor.fetchone()
+                        a_user = {
+                            "userId" : user_info[0],
+                            "email" : user_info[1],
+                            "username" : user_info[2],
+                            "bio" : user_info[3],
+                            "birthday" : user_info[4],
+                            "imageURL" : user_info[5],
+                        }
+                        return Response(json.dumps(a_user, default=str),
+                                                mimetype='application/json',
+                                                status=200)
+            else:
+                return Response(json.dumps(patch_fail, default=str),
                                     mimetype="application/json",
                                     status=409)
         except mariadb.DataError: 
