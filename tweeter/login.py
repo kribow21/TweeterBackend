@@ -5,11 +5,14 @@ import dbcreds
 import json
 import datetime
 from uuid import uuid4
+import re
+
 
 @app.route("/api/login", methods=["POST", "DELETE"])
 def login():
     conn = None
     cursor = None
+    pattern = "[a-zA-Z0-9]+@[a-zA-Z]+\.(com|edu|net)"
 
     if request.method == "POST":
         data = request.json
@@ -18,11 +21,18 @@ def login():
         if_empty = {
             "message" : "Enter in required data"
         }
+        invalid_email = {
+            "messgae" : "please use a valid email"
+                    }
         fail_login = {
             "message" : "Failed to login"
         }
         if (user_email == ''):
             return Response(json.dumps(if_empty),
+                                mimetype='application/json',
+                                status=409)
+        elif(re.search(pattern, user_email) == None):
+            return Response(json.dumps(invalid_email,default=str),
                                 mimetype='application/json',
                                 status=409)
         elif (user_pass == ''):
@@ -34,10 +44,18 @@ def login():
             cursor = conn.cursor()
             cursor.execute("SELECT password,id from user WHERE email=?",[user_email,])
             user_info = cursor.fetchone()
-            if (user_pass == user_info[0]):
+            if(user_info == None):
+                    return Response(json.dumps(fail_login, default=str),
+                                            mimetype='application/json',
+                                            status=409)
+            elif (user_pass == user_info[0]):
                 tokenID = uuid4().hex
-                print(user_info[1], tokenID)
                 cursor.execute("INSERT INTO user_session (login_token,user_id) VALUES (?,?)",[tokenID,user_info[1]])
+
+            else:
+                return Response(json.dumps(fail_login, default=str),
+                                            mimetype='application/json',
+                                            status=409)
             if (user_info != None):
                 cursor.execute("SELECT user_session.user_id, user.email, user.username, user.bio, user.birthday, user_session.login_token, user.image_URL FROM user_session INNER JOIN user ON user_session.user_id=user.id WHERE user_id=?",[user_info[1],])
                 select_user = cursor.fetchone()
@@ -53,10 +71,6 @@ def login():
                 return Response(json.dumps(a_user, default=str),
                                             mimetype='application/json',
                                             status=200)
-            else:
-                return Response(json.dumps(fail_login, default=str),
-                                            mimetype='application/json',
-                                            status=409)
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:
