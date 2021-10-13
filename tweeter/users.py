@@ -8,6 +8,48 @@ import datetime
 import re
 from uuid import uuid4
 
+# def patch_resp():
+#     try:
+#         conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
+#         cursor = conn.cursor()
+#         cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
+#         user_info = cursor.fetchone()
+#         a_user = {
+#             "userId" : user_info[0],
+#             "email" : user_info[1],
+#             "username" : user_info[2],
+#             "bio" : user_info[3],
+#             "birthday" : user_info[4],
+#             "imageURL" : user_info[5],
+#         }
+#         return Response(json.dumps(a_user, default=str),
+#                                 mimetype='application/json',
+#                                 status=200)
+#     except mariadb.DataError: 
+#         print('Something went wrong with your data')
+#     except mariadb.OperationalError:
+#         print('Something wrong with the connection')
+#     except mariadb.ProgrammingError:
+#         print('Your query was wrong')
+#     except mariadb.IntegrityError:
+#         print('Your query would have broken the database and we stopped it')
+#     except mariadb.InterfaceError:
+#         print('Something wrong with database interface')
+#     except:
+#         print('Something went wrong')
+#     finally:
+#         if(cursor != None):
+#             cursor.close()
+#             print('cursor closed')
+#         else:
+#             print('no cursor to begin with')
+#         if(conn != None):   
+#             conn.rollback()
+#             conn.close()
+#             print('connection closed')
+#         else:
+#             print('the connection never opened, nothing to close')
+
 
 @app.route("/api/users", methods=["GET", "POST", "PATCH", "DELETE" ])
 def tweeter_user():
@@ -109,6 +151,7 @@ def tweeter_user():
     elif request.method == "GET":
         client_params = request.args
         print(client_params)
+    #an if for if the client sent in paramas and else if the client sent in NO paramas
         if(len(client_params) == 1):
             client = client_params.get("user_id")
             try:
@@ -157,7 +200,7 @@ def tweeter_user():
                 cursor = conn.cursor()
                 cursor.execute("SELECT * FROM user")
                 all_users = cursor.fetchall()
-                print(all_users)
+            #loops through all the databases info to put in expected format for response
                 user_list = []
                 for user in all_users:
                     getDict = {
@@ -202,12 +245,24 @@ def tweeter_user():
         print(data)
         user_password = data.get("password")
         print(user_password)
+        user_token = data.get("loginToken")
         sucess_del = {
             "message" : "user now deleted"
         }
         fail_del = {
             "message" : "something went wrong with deleteing the user"
         }
+        if_empty = {
+            "message" : "Enter in required data"
+        }
+        if (user_password == ''):
+                return Response(json.dumps(if_empty),
+                                mimetype='application/json',
+                                status=409)
+        if (len(user_token) != 32):
+            return Response(json.dumps(fail_del),
+                                mimetype='application/json',
+                                status=409)
         try:
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
@@ -255,15 +310,10 @@ def tweeter_user():
         edit_keys = data.keys()
         print(edit_keys)
         edit_bio = data.get("bio")
-        print(edit_bio)
         edit_email = data.get("email")
-        print(edit_email)
         edit_username = data.get("username")
-        print(edit_username)
         edit_birthday = data.get("birthday")
-        print(edit_birthday)
         edit_img = data.get("imageURL")
-        print(edit_img)
         patch_fail = {
             "message" : "failed to match the login token to a profile"
         }
@@ -271,10 +321,8 @@ def tweeter_user():
             if (len(edit_token) == 32):
                 conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
                 cursor = conn.cursor()
-                print(edit_token)
                 cursor.execute("SELECT user_id FROM user_session WHERE login_token=?",[edit_token,])
                 varified_user = cursor.fetchone()
-                print(varified_user)
                 if (len(varified_user) == 1):
                     if "bio" in edit_keys:
                         cursor.execute("UPDATE user set bio=? WHERE id=?",[edit_bio, varified_user[0]])
