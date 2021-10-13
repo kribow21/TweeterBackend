@@ -293,86 +293,45 @@ def tweeter_user():
                 cursor.execute("SELECT user_id FROM user_session WHERE login_token=?",[edit_token,])
                 varified_user = cursor.fetchone()
                 if (len(varified_user) == 1):
-                    if "bio" in edit_keys:
-                        cursor.execute("UPDATE user set bio=? WHERE id=?",[edit_bio, varified_user[0]])
-                        conn.commit()
-                        cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
-                        user_info = cursor.fetchone()
-                        a_user = {
-                            "userId" : user_info[0],
-                            "email" : user_info[1],
-                            "username" : user_info[2],
-                            "bio" : user_info[3],
-                            "birthday" : user_info[4],
-                            "imageURL" : user_info[5],
-                        }
-                        return Response(json.dumps(a_user, default=str),
-                                                mimetype='application/json',
-                                                status=200)
-                    elif "email" in edit_keys:
-                        cursor.execute("UPDATE user set email=? WHERE id=?",[edit_email, varified_user[0]])
-                        conn.commit()
-                        cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
-                        user_info = cursor.fetchone()
-                        a_user = {
-                            "userId" : user_info[0],
-                            "email" : user_info[1],
-                            "username" : user_info[2],
-                            "bio" : user_info[3],
-                            "birthday" : user_info[4],
-                            "imageURL" : user_info[5],
-                        }
-                        return Response(json.dumps(a_user, default=str),
-                                                mimetype='application/json',
-                                                status=200)
-                    elif "username" in edit_keys:
-                        cursor.execute("UPDATE user set username=? WHERE id=?",[edit_username, varified_user[0]])
-                        conn.commit()
-                        cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
-                        user_info = cursor.fetchone()
-                        a_user = {
-                            "userId" : user_info[0],
-                            "email" : user_info[1],
-                            "username" : user_info[2],
-                            "bio" : user_info[3],
-                            "birthday" : user_info[4],
-                            "imageURL" : user_info[5],
-                        }
-                        return Response(json.dumps(a_user, default=str),
-                                                mimetype='application/json',
-                                                status=200)
-                    elif "birthday" in edit_keys:
-                        cursor.execute("UPDATE user set birthday=? WHERE id=?",[edit_birthday, varified_user[0]])
-                        conn.commit()
-                        cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
-                        user_info = cursor.fetchone()
-                        a_user = {
-                            "userId" : user_info[0],
-                            "email" : user_info[1],
-                            "username" : user_info[2],
-                            "bio" : user_info[3],
-                            "birthday" : user_info[4],
-                            "imageURL" : user_info[5],
-                        }
-                        return Response(json.dumps(a_user, default=str),
-                                                mimetype='application/json',
-                                                status=200)
-                    elif "imageURL" in edit_keys:
-                        cursor.execute("UPDATE user set image_URL=? WHERE id=?",[edit_img, varified_user[0]])
-                        conn.commit()
-                        cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
-                        user_info = cursor.fetchone()
-                        a_user = {
-                            "userId" : user_info[0],
-                            "email" : user_info[1],
-                            "username" : user_info[2],
-                            "bio" : user_info[3],
-                            "birthday" : user_info[4],
-                            "imageURL" : user_info[5],
-                        }
-                        return Response(json.dumps(a_user, default=str),
-                                                mimetype='application/json',
-                                                status=200)
+                    try:
+                        if "bio" in edit_keys:
+                            cursor.execute("UPDATE user set bio=? WHERE id=?",[edit_bio, varified_user[0]])
+                            conn.commit()
+                            cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
+                            user_info = cursor.fetchone()
+                        elif "email" in edit_keys:
+                            cursor.execute("UPDATE user set email=? WHERE id=?",[edit_email, varified_user[0]])
+                            conn.commit()
+                            cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
+                            user_info = cursor.fetchone()
+                        elif "username" in edit_keys:
+                            cursor.execute("UPDATE user set username=? WHERE id=?",[edit_username, varified_user[0]])
+                            conn.commit()
+                            cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
+                            user_info = cursor.fetchone()
+                        elif "birthday" in edit_keys:
+                            cursor.execute("UPDATE user set birthday=? WHERE id=?",[edit_birthday, varified_user[0]])
+                            conn.commit()
+                            cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
+                            user_info = cursor.fetchone()
+                        elif "imageURL" in edit_keys:
+                            cursor.execute("UPDATE user set image_URL=? WHERE id=?",[edit_img, varified_user[0]])
+                            conn.commit()
+                            cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
+                            user_info = cursor.fetchone()
+
+                    finally:
+                            a_user = {
+                                "userId" : user_info[0],
+                                "email" : user_info[1],
+                                "username" : user_info[2],
+                                "bio" : user_info[3],
+                                "birthday" : user_info[4],
+                                "imageURL" : user_info[5],
+                            }
+                            return Response(json.dumps(a_user, default=str),
+                                                    mimetype='application/json',
+                                                    status=200)
             else:
                 return Response(json.dumps(patch_fail, default=str),
                                     mimetype="application/json",
