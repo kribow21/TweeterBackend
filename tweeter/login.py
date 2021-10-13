@@ -53,6 +53,7 @@ def login():
             elif (user_pass == user_info[0]):
                 tokenID = uuid4().hex
                 cursor.execute("INSERT INTO user_session (login_token,user_id) VALUES (?,?)",[tokenID,user_info[1]])
+                conn.commit()
             else:
                 return Response(json.dumps(fail_login, default=str),
                                             mimetype='application/json',
