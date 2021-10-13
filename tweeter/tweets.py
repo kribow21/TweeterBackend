@@ -26,14 +26,16 @@ def tweets():
             if (len(user_id) == 1):
                 cursor.execute("INSERT INTO tweet(user_id, content) VALUES (?,?)",[user_id[0], user_tweet])
                 conn.commit()
-                cursor.execute("SELECT tweet.id, tweet.user_id,user.username, tweet.content, tweet.created_at FROM tweet INNER JOIN user ON tweet.user_id=user.id WHERE user_id=?",[user_id[0],])
+                cursor.execute("SELECT tweet.id, tweet.user_id,user.username, user.image_URL, tweet.content, tweet.created_at, tweet.image_URL FROM tweet INNER JOIN user ON tweet.user_id=user.id WHERE user_id=?",[user_id[0],])
                 tweet_info = cursor.fetchone()
                 tweet_resp = {
                 "tweetId" : tweet_info[0],
                 "userId" : tweet_info[1],
                 "username" : tweet_info[2],
-                "content" : tweet_info[3],
-                "createdAt" : tweet_info[4]
+                "userImageUrl" : tweet_info[3],
+                "content" : tweet_info[4],
+                "createdAt" : tweet_info[5],
+                "imageURL" : tweet_info[6]
                 }
                 return Response(json.dumps(tweet_resp, default=str),
                             mimetype='application/json',
