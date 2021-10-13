@@ -8,48 +8,6 @@ import datetime
 import re
 from uuid import uuid4
 
-# def patch_resp():
-#     try:
-#         conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
-#         cursor = conn.cursor()
-#         cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
-#         user_info = cursor.fetchone()
-#         a_user = {
-#             "userId" : user_info[0],
-#             "email" : user_info[1],
-#             "username" : user_info[2],
-#             "bio" : user_info[3],
-#             "birthday" : user_info[4],
-#             "imageURL" : user_info[5],
-#         }
-#         return Response(json.dumps(a_user, default=str),
-#                                 mimetype='application/json',
-#                                 status=200)
-#     except mariadb.DataError: 
-#         print('Something went wrong with your data')
-#     except mariadb.OperationalError:
-#         print('Something wrong with the connection')
-#     except mariadb.ProgrammingError:
-#         print('Your query was wrong')
-#     except mariadb.IntegrityError:
-#         print('Your query would have broken the database and we stopped it')
-#     except mariadb.InterfaceError:
-#         print('Something wrong with database interface')
-#     except:
-#         print('Something went wrong')
-#     finally:
-#         if(cursor != None):
-#             cursor.close()
-#             print('cursor closed')
-#         else:
-#             print('no cursor to begin with')
-#         if(conn != None):   
-#             conn.rollback()
-#             conn.close()
-#             print('connection closed')
-#         else:
-#             print('the connection never opened, nothing to close')
-
 
 @app.route("/api/users", methods=["GET", "POST", "PATCH", "DELETE" ])
 def tweeter_user():
@@ -266,19 +224,30 @@ def tweeter_user():
         try:
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
-            cursor.execute("SELECT user.password, user_session.login_token FROM user_session INNER JOIN user ON user_session.user_id=user.id WHERE password=?",[user_password,])
-            user_info_for_deleteing = cursor.fetchone()
-            if (user_info_for_deleteing != None):
-                cursor.execute("DELETE FROM user_session WHERE login_token=?",[user_info_for_deleteing[1]])
-                cursor.execute("DELETE FROM user WHERE password=?",[user_info_for_deleteing[0]])
-                conn.commit()
-                return Response(json.dumps(sucess_del, default=str),
-                            mimetype='application/json',
-                            status=200)
-            else:
-                return Response(json.dumps(fail_del, default=str),
+            cursor.execute("SELECT login_token FROM user_session WHERE login_token=?",[user_token,])
+            valid_token = cursor.fetchone()
+            if(len(valid_token) != 1):
+                    return Response(json.dumps(fail_del, default=str),
                                 mimetype="application/json",
                                 status=409)
+            cursor.execute("SELECT password FROM user WHERE password=?",[user_password,])
+            valid_pass = cursor.fetchone()
+            if(valid_pass == None):
+                    return Response(json.dumps(fail_del, default=str),
+                                mimetype="application/json",
+                                status=409)
+            if (valid_token[0] == user_token and valid_pass[0] == user_password):
+                cursor.execute("DELETE FROM user_session WHERE login_token=?",[valid_token[0]])
+                cursor.execute("DELETE FROM user WHERE password=?",[user_password,])
+                conn.commit()
+                if (cursor.rowcount == 1):
+                    return Response(json.dumps(sucess_del, default=str),
+                                                mimetype='application/json',
+                                                status=200)
+                else:
+                    return Response(json.dumps(fail_del, default=str),
+                                                mimetype="application/json",
+                                                status=409)
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:
