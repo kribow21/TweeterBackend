@@ -110,9 +110,9 @@ def tweeter_user():
         client_params = request.args
         print(client_params)
     #an if for if the client sent in paramas and else if the client sent in NO paramas
-        if(len(client_params) == 1):
-            client = client_params.get("user_id")
-            try:
+        try:
+            if(len(client_params) == 1):
+                client = client_params.get("userId")
                 conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
                 cursor = conn.cursor()
                 cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[client,])
@@ -128,32 +128,7 @@ def tweeter_user():
                 return Response(json.dumps(a_user, default=str),
                                             mimetype='application/json',
                                             status=200)
-            except mariadb.DataError: 
-                print('Something went wrong with your data')
-            except mariadb.OperationalError:
-                print('Something wrong with the connection')
-            except mariadb.ProgrammingError:
-                print('Your query was wrong')
-            except mariadb.IntegrityError:
-                print('Your query would have broken the database and we stopped it')
-            except mariadb.InterfaceError:
-                print('Something wrong with database interface')
-            except:
-                print('Something went wrong')
-            finally:
-                if(cursor != None):
-                    cursor.close()
-                    print('cursor closed')
-                else:
-                    print('no cursor to begin with')
-                if(conn != None):   
-                    conn.rollback()
-                    conn.close()
-                    print('connection closed')
-                else:
-                    print('the connection never opened, nothing to close')
-        else:
-            try:
+            else:
                 conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
                 cursor = conn.cursor()
                 cursor.execute("SELECT * FROM user")
@@ -171,32 +146,32 @@ def tweeter_user():
                         }
                     user_list.append(getDict)
                 return Response(json.dumps(user_list, default=str),
-                mimetype='application/json',
-                status=200)
-            except mariadb.DataError: 
-                print('Something went wrong with your data')
-            except mariadb.OperationalError:
-                print('Something wrong with the connection')
-            except mariadb.ProgrammingError:
-                print('Your query was wrong')
-            except mariadb.IntegrityError:
-                print('Your query would have broken the database and we stopped it')
-            except mariadb.InterfaceError:
-                print('Something wrong with database interface')
-            except:
-                print('Something went wrong')
-            finally:
-                if(cursor != None):
-                    cursor.close()
-                    print('cursor closed')
-                else:
-                    print('no cursor to begin with')
-                if(conn != None):   
-                    conn.rollback()
-                    conn.close()
-                    print('connection closed')
-                else:
-                    print('the connection never opened, nothing to close')
+                                        mimetype='application/json',
+                                        status=200)
+        except mariadb.DataError: 
+            print('Something went wrong with your data')
+        except mariadb.OperationalError:
+            print('Something wrong with the connection')
+        except mariadb.ProgrammingError:
+            print('Your query was wrong')
+        except mariadb.IntegrityError:
+            print('Your query would have broken the database and we stopped it')
+        except mariadb.InterfaceError:
+            print('Something wrong with database interface')
+        except:
+            print('Something went wrong')
+        finally:
+            if(cursor != None):
+                cursor.close()
+                print('cursor closed')
+            else:
+                print('no cursor to begin with')
+            if(conn != None):   
+                conn.rollback()
+                conn.close()
+                print('connection closed')
+            else:
+                print('the connection never opened, nothing to close')
 
     elif request.method == "DELETE":
         data = request.json
