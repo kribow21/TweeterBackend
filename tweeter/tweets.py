@@ -17,7 +17,7 @@ def tweets():
         user_token = data.get("loginToken")
         user_tweet = data.get("content")
     try:
-        if (len(user_token) == 32):
+        if (len(user_token) == 32  and len(user_tweet) <= 200):
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
             cursor.execute("SELECT user_id from user_session WHERE login_token=?",[user_token,])
