@@ -22,7 +22,7 @@ def tweets():
             cursor = conn.cursor()
             cursor.execute("SELECT user_id from user_session WHERE login_token=?",[user_token,])
             user_id = cursor.fetchone()
-            print(user_id)
+        #checking if user is logged in. if so, allow them to create a tweet
             if (len(user_id) == 1):
                 cursor.execute("INSERT INTO tweet(user_id, content) VALUES (?,?)",[user_id[0], user_tweet])
                 conn.commit()
@@ -71,7 +71,7 @@ def tweets():
     if request.method == "GET":
         client_params = request.args
         print(client_params)
-    #an if for if the client sent in paramas and else if the client sent in NO paramas
+    #if the client sent in paramas and else if the client sent in NO paramas
     try:
         if(len(client_params) == 1):
             client = client_params.get("userId")
@@ -169,6 +169,7 @@ def tweets():
         session_userId = cursor.fetchone()
         cursor.execute("SELECT user_id FROM tweet WHERE id=?",[tweet_id,])
         tweet_userId = cursor.fetchone()
+    #checking if the user owns the login token and if the user owns the tweet
         if (session_userId == tweet_userId):
             cursor.execute("UPDATE tweet SET content=? WHERE id=?",[tweet_content,tweet_id])
             conn.commit()
@@ -230,6 +231,7 @@ def tweets():
                 session_userID = cursor.fetchone()
                 cursor.execute("SELECT user_id FROM tweet WHERE id=?",[tweetID,])
                 tweet_userID = cursor.fetchone()
+            #checking if the owner of the token is also the owner of the tweet 
                 if(session_userID == tweet_userID):
                     cursor.execute("DELETE from tweet WHERE id=?",[tweetID])
                     conn.commit()
