@@ -30,6 +30,7 @@ def tweetlikes():
             user_id = cursor.fetchone()
             cursor.execute("SELECT * FROM tweet_like WHERE tweet_id=? AND user_id=?",[tweetID, user_id[0]])
             already_liked = cursor.fetchone()
+        # checking if those two inputs already exsist in the db , if not it returns none if they do exsist the variable will have a length of 2
             if(already_liked == None):
                 cursor.execute("INSERT INTO tweet_like(tweet_id, user_id) VALUES (?,?)",[tweetID, user_id[0]])
                 conn.commit()
@@ -64,6 +65,7 @@ def tweetlikes():
                 print('connection closed')
             else:
                 print('the connection never opened, nothing to close')
+    # returns if the user sent in data that does not match the if statement about the token being 32 and the tweetid being a int
     else:
         return Response(json.dumps(data_error, default=str),
                                 mimetype='application/json',
