@@ -130,4 +130,62 @@ def get_follows():
                 print('connection closed')
             else:
                 print('the connection never opened, nothing to close')
-
+    if request.method == "DELETE":
+        data = request.json
+        follower_token = data.get("loginToken")
+        followed_id = data.get("followId")
+        delete_fail = {
+            "message" : "something went wrong with deleting your follow"
+        }
+        confirm = {
+            "message" : "follow deleted"
+        }
+        data_error = {
+            "message" : "something wrong with passed data"
+        }
+        try:
+            if (len(follower_token) == 32 and isinstance(followed_id, int) == True):
+                conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
+                cursor = conn.cursor()
+                cursor.execute("SELECT user_id FROM user_session WHERE login_token=?",[follower_token,])
+                session_userID = cursor.fetchone()
+                cursor.execute("SELECT follower FROM follow WHERE followed=?",[followed_id])
+                follower_userID = cursor.fetchone()
+                if(session_userID == follower_userID):
+                    cursor.execute("DELETE from follow WHERE follower=? AND followed=?",[session_userID[0], followed_id])
+                    conn.commit()
+                    return Response(json.dumps(confirm, default=str),
+                                        mimetype="application/json",
+                                        status=200)
+                else:
+                    return Response(json.dumps(delete_fail, default=str),
+                                    mimetype='application/json',
+                                    status=409)
+            else:
+                return Response(json.dumps(data_error, default=str),
+                                mimetype='application/json',
+                                status=409)
+        except mariadb.DataError: 
+            print('Something went wrong with your data')
+        except mariadb.OperationalError:
+            print('Something wrong with the connection')
+        except mariadb.ProgrammingError:
+            print('Your query was wrong')
+        except mariadb.IntegrityError:
+            print('Your query would have broken the database and we stopped it')
+        except mariadb.InterfaceError:
+            print('Something wrong with database interface')
+        except:
+            print('Something went wrong')
+        finally:
+            if(cursor != None):
+                cursor.close()
+                print('cursor closed')
+            else:
+                print('no cursor to begin with')
+            if(conn != None):   
+                conn.rollback()
+                conn.close()
+                print('connection closed')
+            else:
+                print('the connection never opened, nothing to close')
