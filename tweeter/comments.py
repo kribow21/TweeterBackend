@@ -75,3 +75,57 @@ def comments():
             print('connection closed')
         else:
             print('the connection never opened, nothing to close')
+    if request.method == "GET":
+            params = request.args
+            tweetID = params.get("tweetId")
+            data_error = {
+            "message" : "something wrong with passed data"
+            }
+    try:
+        if(len(params) == 1):
+            conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
+            cursor = conn.cursor()
+            cursor.execute("SELECT comment.id, comment.tweet_id, comment.user_id, user.username, comment.content, comment.created_at FROM comment INNER JOIN user ON comment.user_id=user.id WHERE tweet_id=?",[tweetID,])
+            all_comments = cursor.fetchall()
+            comment_list = []
+            for comment in all_comments:
+                resp = {
+                "commentId" : comment[0],
+                "tweetId" : comment[1],
+                "userId" : comment[2],
+                "username" : comment[3],
+                "content" : comment[4],
+                "createdAt" : comment[5]
+                }
+                comment_list.append(resp)
+            return Response(json.dumps(comment_list, default=str),
+                                        mimetype='application/json',
+                                        status=200)
+        else:
+            return Response(json.dumps(data_error, default=str),
+                                            mimetype="application/json",
+                                            status=409)
+    except mariadb.DataError: 
+        print('Something went wrong with your data')
+    except mariadb.OperationalError:
+        print('Something wrong with the connection')
+    except mariadb.ProgrammingError:
+        print('Your query was wrong')
+    except mariadb.IntegrityError:
+        print('Your query would have broken the database and we stopped it')
+    except mariadb.InterfaceError:
+        print('Something wrong with database interface')
+    except:
+        print('Something went wrong')
+    finally:
+        if(cursor != None):
+            cursor.close()
+            print('cursor closed')
+        else:
+            print('no cursor to begin with')
+        if(conn != None):   
+            conn.rollback()
+            conn.close()
+            print('connection closed')
+        else:
+            print('the connection never opened, nothing to close')
