@@ -79,3 +79,55 @@ def get_follows():
         except:
             print('Something went wrong')
 
+    if request.method == "GET":
+        params = request.args
+        followerID = params.get("userId")
+        try:
+            if(len(params) == 1):
+                conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
+                cursor = conn.cursor()
+                cursor.execute("SELECT user.id, user.email, user.username, user.bio, user.birthday, user.image_URL, follow.follower, follow.followed FROM user INNER JOIN follow ON follow.followed=user.id WHERE follower=?",[followerID,])
+                users_followed = cursor.fetchall()
+                follow_list = []
+                for follow in users_followed:
+                    getDict = {
+                        "userId" : follow[0],
+                        "email" : follow[1],
+                        "username" : follow[2],
+                        "bio" : follow[3],
+                        "birthday" : follow[4],
+                        "imageURL" : follow[5]
+                        }
+                    follow_list.append(getDict)
+                return Response(json.dumps(follow_list, default=str),
+                                        mimetype='application/json',
+                                        status=200)
+            else:
+                return Response(json.dumps(data_error, default=str),
+                                            mimetype="application/json",
+                                            status=409)
+        except mariadb.DataError: 
+            print('Something went wrong with your data')
+        except mariadb.OperationalError:
+            print('Something wrong with the connection')
+        except mariadb.ProgrammingError:
+            print('Your query was wrong')
+        except mariadb.IntegrityError:
+            print('Your query would have broken the database and we stopped it')
+        except mariadb.InterfaceError:
+            print('Something wrong with database interface')
+        except:
+            print('Something went wrong')
+        finally:
+            if(cursor != None):
+                cursor.close()
+                print('cursor closed')
+            else:
+                print('no cursor to begin with')
+            if(conn != None):   
+                conn.rollback()
+                conn.close()
+                print('connection closed')
+            else:
+                print('the connection never opened, nothing to close')
+
