@@ -135,3 +135,64 @@ def commentlikes():
             print('connection closed')
         else:
             print('the connection never opened, nothing to close')
+    
+    if request.method == "DELETE":
+        data = request.json
+        loginTok = data.get("loginToken")
+        commentid = data.get("commentId")
+        delete_fail = {
+            "message" : "something went wrong with editing your like"
+        }
+        confirm = {
+            "message" : "comment like deleted"
+        }
+        data_error = {
+            "message" : "something wrong with passed data"
+        }
+        if (len(loginTok) == 32 and isinstance(commentid, int) == True):
+            try:
+                conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
+                cursor = conn.cursor()
+                cursor.execute("SELECT user_id FROM user_session WHERE login_token=?",[loginTok,])
+                session_userID = cursor.fetchone()
+                cursor.execute("SELECT user_id FROM comment_like WHERE comment_id=?",[commentid,])
+                comlike_userID = cursor.fetchone()
+            #checking if the owner of the token is also the owner of the comment like
+                if(session_userID == comlike_userID):
+                    cursor.execute("DELETE from tweet_like WHERE tweet_id=?",[commentid])
+                    conn.commit()
+                    return Response(json.dumps(confirm, default=str),
+                                        mimetype="application/json",
+                                        status=200)
+                else:
+                    return Response(json.dumps(delete_fail, default=str),
+                                    mimetype='application/json',
+                                    status=409)
+            except mariadb.DataError: 
+                print('Something went wrong with your data')
+            except mariadb.OperationalError:
+                print('Something wrong with the connection')
+            except mariadb.ProgrammingError:
+                print('Your query was wrong')
+            except mariadb.IntegrityError:
+                print('Your query would have broken the database and we stopped it')
+            except mariadb.InterfaceError:
+                print('Something wrong with database interface')
+            except:
+                print('Something went wrong')
+            finally:
+                if(cursor != None):
+                    cursor.close()
+                    print('cursor closed')
+                else:
+                    print('no cursor to begin with')
+                if(conn != None):   
+                    conn.rollback()
+                    conn.close()
+                    print('connection closed')
+                else:
+                    print('the connection never opened, nothing to close')
+        else:
+            return Response(json.dumps(data_error, default=str),
+                                mimetype='application/json',
+                                status=409)
