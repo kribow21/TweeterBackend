@@ -10,3 +10,4 @@ import tweeter.tweetlikes
 import tweeter.follows
 import tweeter.followers
 import tweeter.comments
+import tweeter.commentlikes
