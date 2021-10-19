@@ -12,18 +12,21 @@ def tweets():
     tweet_fail = {
         "message" : "failed to post tweet"
     }
+    content_error = {
+            "message" : "Length of tweet error"
+        }
     if request.method == "POST":
         data = request.json
         user_token = data.get("loginToken")
         user_tweet = data.get("content")
     try:
-        if (len(user_token) == 32 ):
+        if (len(user_token) == 32):
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
             cursor.execute("SELECT user_id from user_session WHERE login_token=?",[user_token,])
             user_id = cursor.fetchone()
         #checking if user is logged in. if so, allow them to create a tweet
-            if (len(user_id) == 1):
+            if (len(user_tweet) <= 200 and len(user_tweet) > 0):
                 cursor.execute("INSERT INTO tweet(user_id, content) VALUES (?,?)",[user_id[0], user_tweet])
                 conn.commit()
                 cursor.execute("SELECT tweet.id, tweet.user_id,user.username, user.image_URL, tweet.content, tweet.created_at, tweet.image_URL FROM tweet INNER JOIN user ON tweet.user_id=user.id WHERE user_id=?",[user_id[0],])
@@ -40,6 +43,10 @@ def tweets():
                 return Response(json.dumps(tweet_resp, default=str),
                             mimetype='application/json',
                             status=200)
+            else:
+                    return Response(json.dumps(content_error,default=str),
+                                mimetype='application/json',
+                                status=409)
         else:
             return Response(json.dumps(tweet_fail,default=str),
                                 mimetype='application/json',
@@ -70,7 +77,6 @@ def tweets():
             print('the connection never opened, nothing to close')
     if request.method == "GET":
         client_params = request.args
-        print(client_params)
     #if the client sent in paramas and else if the client sent in NO paramas
     try:
         if(len(client_params) == 1):
@@ -154,7 +160,7 @@ def tweets():
                     return Response(json.dumps(if_empty, default=str),
                                 mimetype='application/json',
                                 status=409)
-        if (tweet_content == ''):
+        if (tweet_content == '' or len(tweet_content) > 200 ):
                     return Response(json.dumps(if_empty, default=str),
                                 mimetype='application/json',
                                 status=409)
