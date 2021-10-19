@@ -5,6 +5,7 @@ import mariadb
 import dbcreds
 import json
 
+#sends back the info of all the users that follow the passed params userID
 @app.route("/api/followers", methods=["GET"])
 def get_followers():
     conn = None
@@ -21,6 +22,7 @@ def get_followers():
                 cursor = conn.cursor()
                 cursor.execute("SELECT user.id, user.email, user.username, user.bio, user.birthday, user.image_URL, follow.follower, follow.followed FROM user INNER JOIN follow ON follow.follower=user.id WHERE followed=?",[userID,])
                 users_followers = cursor.fetchall()
+            #loops through all the fetched info of the users that follow the given userid and formats the data as expected
                 follower_list = []
                 for follow in users_followers:
                     getDict = {
@@ -35,6 +37,7 @@ def get_followers():
                 return Response(json.dumps(follower_list, default=str),
                                         mimetype='application/json',
                                         status=200)
+            #if the client sent in no params this else returns a message
             else:
                 return Response(json.dumps(data_error, default=str),
                                             mimetype="application/json",
