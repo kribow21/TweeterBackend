@@ -22,10 +22,12 @@ def get_follows():
         db_error = {
             "message" : "CONFLICT data passed failed contraint in database"
         }
+        #checking the data passed to ensure its what the database expects before connecting to it. else catches if its not whats expected
         try:
             if (len(followerToken) == 32 and isinstance(followedID, int) == True):
                 conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
                 cursor = conn.cursor()
+        #using the token to find the userID of the person currently logged in trying to make a follow relationship
                 cursor.execute("SELECT user_id FROM user_session WHERE login_token=?",[followerToken,])
                 follower_user_id = cursor.fetchone()
                 print(follower_user_id)
@@ -33,6 +35,7 @@ def get_follows():
                 return Response(json.dumps(data_error, default=str),
                                         mimetype='application/json',
                                         status=409)
+        #use the collected userID to insert the relationship into the table
             try:
                 cursor.execute("INSERT INTO follow (follower, followed) VALUES (?,?)",[follower_user_id[0], followedID])
                 conn.commit()
@@ -66,6 +69,8 @@ def get_follows():
                     print('connection closed')
                 else:
                     print('the connection never opened, nothing to close')
+        except mariadb.DatabaseError:
+            print('Something went wrong with connecting to database')
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:
@@ -82,12 +87,14 @@ def get_follows():
     if request.method == "GET":
         params = request.args
         followerID = params.get("userId")
+    #expects a parma and if it doesnt get one the else with respond
         try:
             if(len(params) == 1):
                 conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
                 cursor = conn.cursor()
                 cursor.execute("SELECT user.id, user.email, user.username, user.bio, user.birthday, user.image_URL, follow.follower, follow.followed FROM user INNER JOIN follow ON follow.followed=user.id WHERE follower=?",[followerID,])
                 users_followed = cursor.fetchall()
+        #grabbing all the info about all the (followers)users that passed followID(userID) follows
                 follow_list = []
                 for follow in users_followed:
                     getDict = {
@@ -106,6 +113,8 @@ def get_follows():
                 return Response(json.dumps(data_error, default=str),
                                             mimetype="application/json",
                                             status=409)
+        except mariadb.DatabaseError:
+            print('Something went wrong with connecting to database')
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:
@@ -143,6 +152,7 @@ def get_follows():
         data_error = {
             "message" : "something wrong with passed data"
         }
+        #to unfollow a user the token and followID(userID) are passed and checked for expected data
         try:
             if (len(follower_token) == 32 and isinstance(followed_id, int) == True):
                 conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
@@ -151,6 +161,7 @@ def get_follows():
                 session_userID = cursor.fetchone()
                 cursor.execute("SELECT follower FROM follow WHERE followed=?",[followed_id])
                 follower_userID = cursor.fetchone()
+            #comparing if the userID of the passed token also owns the follow relationship where they are the follower
                 if(session_userID == follower_userID):
                     cursor.execute("DELETE from follow WHERE follower=? AND followed=?",[session_userID[0], followed_id])
                     conn.commit()
@@ -165,6 +176,8 @@ def get_follows():
                 return Response(json.dumps(data_error, default=str),
                                 mimetype='application/json',
                                 status=409)
+        except mariadb.DatabaseError:
+            print('Something went wrong with connecting to database')
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:
