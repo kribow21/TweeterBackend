@@ -37,6 +37,7 @@ def tweetlikes():
                     return Response(json.dumps(resp, default=str),
                                         mimetype='application/json',
                                         status=200)
+                #if it hits this the like already exsists
                 elif(len(already_liked) == 2):
                     return Response(json.dumps(repeat, default=str),
                                     mimetype='application/json',
@@ -46,6 +47,8 @@ def tweetlikes():
                 return Response(json.dumps(data_error, default=str),
                                     mimetype='application/json',
                                     status=409)
+        except mariadb.DatabaseError:
+            print('Something went wrong with connecting to database')
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:
@@ -76,6 +79,7 @@ def tweetlikes():
         tweet_ID = params.get("tweetId")
         print(tweet_ID)
     try:
+        #sends back all the likes with expected data response
         if (tweet_ID == None):
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
@@ -92,6 +96,7 @@ def tweetlikes():
             return Response(json.dumps(like_coll, default=str),
                                     mimetype='application/json',
                                     status=200)
+        #sends back all the likes on that tweetID and the info of who liked that tweet
         elif (len(params) == 1):
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
@@ -112,6 +117,8 @@ def tweetlikes():
             return Response(json.dumps(data_error, default=str),
                                 mimetype='application/json',
                                 status=409)
+    except mariadb.DatabaseError:
+        print('Something went wrong with connecting to database')
     except mariadb.DataError: 
         print('Something went wrong with your data')
     except mariadb.OperationalError:
@@ -150,54 +157,55 @@ def tweetlikes():
         data_error = {
             "message" : "something wrong with passed data"
         }
+    try:
         if (len(loginTok) == 32 and isinstance(tweetid, int) == True):
-            try:
-                conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
-                cursor = conn.cursor()
-                cursor.execute("SELECT user_id FROM user_session WHERE login_token=?",[loginTok,])
-                session_userID = cursor.fetchone()
-                cursor.execute("SELECT user_id FROM tweet_like WHERE tweet_id=?",[tweetid,])
-                tweetlike_userID = cursor.fetchone()
-            #checking if the owner of the token is also the owner of the tweet like
-                if(session_userID == tweetlike_userID):
-                    cursor.execute("DELETE from tweet_like WHERE tweet_id=?",[tweetid])
-                    conn.commit()
-                    return Response(json.dumps(confirm, default=str),
-                                        mimetype="application/json",
-                                        status=200)
-                else:
-                    return Response(json.dumps(delete_fail, default=str),
-                                    mimetype='application/json',
-                                    status=409)
-            except mariadb.DataError: 
-                print('Something went wrong with your data')
-            except mariadb.OperationalError:
-                print('Something wrong with the connection')
-            except mariadb.ProgrammingError:
-                print('Your query was wrong')
-            except mariadb.IntegrityError:
-                print('Your query would have broken the database and we stopped it')
-            except mariadb.InterfaceError:
-                print('Something wrong with database interface')
-            except:
-                print('Something went wrong')
-            finally:
-                if(cursor != None):
-                    cursor.close()
-                    print('cursor closed')
-                else:
-                    print('no cursor to begin with')
-                if(conn != None):   
-                    conn.rollback()
-                    conn.close()
-                    print('connection closed')
-                else:
-                    print('the connection never opened, nothing to close')
+            conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
+            cursor = conn.cursor()
+            cursor.execute("SELECT user_id FROM user_session WHERE login_token=?",[loginTok,])
+            session_userID = cursor.fetchone()
+            cursor.execute("SELECT user_id FROM tweet_like WHERE tweet_id=?",[tweetid,])
+            tweetlike_userID = cursor.fetchone()
+        #checking if the owner of the token is also the owner of the tweet like
+            if(session_userID == tweetlike_userID):
+                cursor.execute("DELETE from tweet_like WHERE tweet_id=?",[tweetid])
+                conn.commit()
+                return Response(json.dumps(confirm, default=str),
+                                    mimetype="application/json",
+                                    status=200)
+            else:
+                return Response(json.dumps(delete_fail, default=str),
+                                mimetype='application/json',
+                                status=409)
         else:
             return Response(json.dumps(data_error, default=str),
                                 mimetype='application/json',
                                 status=409)
-                                
+    except mariadb.DatabaseError:
+        print('Something went wrong with connecting to database')
+    except mariadb.DataError: 
+        print('Something went wrong with your data')
+    except mariadb.OperationalError:
+        print('Something wrong with the connection')
+    except mariadb.ProgrammingError:
+        print('Your query was wrong')
+    except mariadb.IntegrityError:
+        print('Your query would have broken the database and we stopped it')
+    except mariadb.InterfaceError:
+        print('Something wrong with database interface')
+    except:
+        print('Something went wrong')
+    finally:
+        if(cursor != None):
+            cursor.close()
+            print('cursor closed')
+        else:
+            print('no cursor to begin with')
+        if(conn != None):   
+            conn.rollback()
+            conn.close()
+            print('connection closed')
+        else:
+            print('the connection never opened, nothing to close')
 
 
 
