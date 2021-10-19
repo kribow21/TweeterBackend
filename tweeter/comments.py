@@ -16,18 +16,20 @@ def comments():
         tweet_id = data.get("tweetId")
         user_comment = data.get("content")
         comment_fail = {
-        "message" : "failed to post comment"
+            "message" : "failed to post comment"
             }
         content_error = {
             "message" : "Length of comment error"
         }
     try:
+        #checking the data before connecting to the database
         if (len(user_token) == 32  and isinstance(tweet_id, int) == True):
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
             cursor.execute("SELECT user_id FROM user_session WHERE login_token=?",[user_token,])
             session_userID = cursor.fetchone()
-            if(len(user_comment) <= 120 and len(user_comment) > 0):
+        #checking the comment is not empty but also isnt over 150 characters before passing to the database
+            if(len(user_comment) <= 150 and len(user_comment) > 0):
                 cursor.execute("INSERT INTO comment (tweet_id, content, user_id) VALUES (?,?,?)",[tweet_id, user_comment, session_userID[0]])
                 conn.commit()
                 cursor.execute("SELECT comment.id, comment.tweet_id, comment.user_id, user.username, comment.content, comment.created_at FROM comment INNER JOIN user ON comment.user_id=user.id WHERE user_id=?",[session_userID[0],])
@@ -75,12 +77,14 @@ def comments():
             print('connection closed')
         else:
             print('the connection never opened, nothing to close')
+
     if request.method == "GET":
             params = request.args
             tweetID = params.get("tweetId")
             data_error = {
             "message" : "something wrong with passed data"
             }
+    #expects a tweet id to collect all the comments on that tweet, a loop because there can be more than one comment on a single tweet
     try:
         if(len(params) == 1):
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
@@ -105,6 +109,8 @@ def comments():
             return Response(json.dumps(data_error, default=str),
                                             mimetype="application/json",
                                             status=409)
+    except mariadb.DatabaseError:
+        print('Something went wrong with connecting to database')
     except mariadb.DataError: 
         print('Something went wrong with your data')
     except mariadb.OperationalError:
@@ -129,6 +135,7 @@ def comments():
             print('connection closed')
         else:
             print('the connection never opened, nothing to close')
+
     if request.method == "PATCH":
         data = request.json
         com_token = data.get("loginToken")
@@ -140,12 +147,13 @@ def comments():
         if_empty = {
             "message" : "Enter in required data"
         }
+        #before connecting the db check the passed data 
         if (com_id == ''):
-                    return Response(json.dumps(if_empty, default=str),
+            return Response(json.dumps(if_empty, default=str),
                                 mimetype='application/json',
                                 status=409)
         if (content_edit == ''):
-                    return Response(json.dumps(if_empty, default=str),
+            return Response(json.dumps(if_empty, default=str),
                                 mimetype='application/json',
                                 status=409)
         if (len(com_token) != 32):
@@ -159,10 +167,11 @@ def comments():
             session_userId = cursor.fetchone()
             cursor.execute("SELECT user_id FROM comment WHERE id=?",[com_id,])
             com_userId = cursor.fetchone()
-        #checking if the user owns the login token and if the user owns the comment
+        #checking if the same userID owns the login token and the comment
             if (session_userId == com_userId):
                 cursor.execute("UPDATE comment SET content=? WHERE id=?",[content_edit,com_id])
                 conn.commit()
+        #return the comment with the newly updated content on the same userID we checked above 
                 cursor.execute("SELECT comment.id, comment.tweet_id, comment.user_id, user.username, comment.content, comment.created_at FROM comment INNER JOIN user ON comment.user_id=user.id WHERE user_id=?",[com_userId[0],])
                 comment_info = cursor.fetchone()
                 resp = {
@@ -180,6 +189,8 @@ def comments():
                 return Response(json.dumps(patch_fail, default=str),
                                 mimetype='application/json',
                                 status=409)
+        except mariadb.DatabaseError:
+            print('Something went wrong with connecting to database')
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:
@@ -204,6 +215,7 @@ def comments():
                 print('connection closed')
             else:
                 print('the connection never opened, nothing to close')
+
     if request.method == "DELETE":
         data = request.json
         token = data.get("loginToken")
@@ -217,6 +229,7 @@ def comments():
         data_error = {
             "message" : "something wrong with passed data"
         }
+        #before connecting the db check the passed data 
         if (len(token) == 32 and isinstance(comID, int) == True):
             try:
                 conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
@@ -236,6 +249,8 @@ def comments():
                     return Response(json.dumps(delete_fail, default=str),
                                     mimetype='application/json',
                                     status=409)
+            except mariadb.DatabaseError:
+                print('Something went wrong with connecting to database')
             except mariadb.DataError: 
                 print('Something went wrong with your data')
             except mariadb.OperationalError:

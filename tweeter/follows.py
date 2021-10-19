@@ -50,6 +50,7 @@ def get_follows():
                 print('Your query was wrong')
             except mariadb.IntegrityError:
                 print('Your query would have broken the database and we stopped it')
+        #catching the error from the database so that repeat follows and following yourself are not permitted 
                 return Response(json.dumps(db_error, default=str),
                                         mimetype='application/json',
                                         status=409)
