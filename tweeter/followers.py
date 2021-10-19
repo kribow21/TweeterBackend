@@ -28,7 +28,7 @@ def get_followers():
                         "email" : follow[1],
                         "username" : follow[2],
                         "bio" : follow[3],
-                        "birthday" : follow[4],
+                        "birthdate" : follow[4],
                         "imageURL" : follow[5]
                         }
                     follower_list.append(getDict)
@@ -39,6 +39,8 @@ def get_followers():
                 return Response(json.dumps(data_error, default=str),
                                             mimetype="application/json",
                                             status=409)
+        except mariadb.DatabaseError:
+            print('Something went wrong with connecting to database')
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:
