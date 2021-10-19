@@ -13,25 +13,27 @@ from uuid import uuid4
 def tweeter_user():
     conn = None
     cursor = None
-
+    if_empty = {
+            "message" : "Enter in required data"
+        }
+    birthday_wrong = {
+                    "message" : "Enter in correct format"
+                    }
+    invalid_email = {
+            "messgae" : "please use a valid email"
+                    }
+    pattern = "[a-zA-Z0-9]+@[a-zA-Z]+\.(com|edu|net)"
+    bio_error = {
+        "message" : "Length of bio exceeds limit"
+    }
     if request.method == "POST":
         data = request.json
         user_email = data.get("email")         
         user_username = data.get("username")   
         user_password = data.get("password")   
-        user_birthday = data.get("birthday")
+        user_birthday = data.get("birthdate")
         user_bio = data.get("bio")
         user_image = data.get("image_URL")
-        if_empty = {
-            "message" : "Enter in required data"
-        }
-        birthday_wrong = {
-                    "message" : "Enter in correct format"
-                    }
-        invalid_email = {
-            "messgae" : "please use a valid email"
-                    }
-        pattern = "[a-zA-Z0-9]+@[a-zA-Z]+\.(com|edu|net)"
         try:
             datetime.datetime.strptime(user_birthday, '%Y-%m-%d')
         except ValueError:
@@ -55,6 +57,10 @@ def tweeter_user():
                 return Response(json.dumps(invalid_email,default=str),
                                 mimetype='application/json',
                                 status=409)
+            if(len(user_bio) > 100):
+                return Response(json.dumps(bio_error,default=str),
+                                mimetype='application/json',
+                                status=409)
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
             cursor.execute("INSERT INTO user(email, username, password, birthday, bio, image_URL) VALUES (?,?,?,?,?,?)",[user_email,user_username,user_password, user_birthday, user_bio, user_image])
@@ -74,13 +80,15 @@ def tweeter_user():
                 "email" : login_info[1],
                 "username" : login_info[2],
                 "bio" : login_info[3],
-                "birthday" : login_info[4],
+                "birthdate" : login_info[4],
                 "imageURL" : login_info[5],
                 "loginToken" : login_info[6]
             }
             return Response(json.dumps(login_resp, default=str),
                             mimetype='application/json',
                             status=200)
+        except mariadb.DatabaseError:
+            print('Something went wrong with connecting to database')
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:
@@ -122,7 +130,7 @@ def tweeter_user():
                     "email" : user_info[1],
                     "username" : user_info[2],
                     "bio" : user_info[3],
-                    "birthday" : user_info[4],
+                    "birthdate" : user_info[4],
                     "imageURL" : user_info[5],
                 }
                 return Response(json.dumps(a_user, default=str),
@@ -141,13 +149,15 @@ def tweeter_user():
                         "email" : user[1],
                         "username" : user[2],
                         "bio" : user[3],
-                        "birthday" : user[4],
+                        "birthdate" : user[4],
                         "imageURL" : user[5]
                         }
                     user_list.append(getDict)
                 return Response(json.dumps(user_list, default=str),
                                         mimetype='application/json',
                                         status=200)
+        except mariadb.DatabaseError:
+            print('Something went wrong with connecting to database')
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:
@@ -185,9 +195,6 @@ def tweeter_user():
         fail_del = {
             "message" : "something went wrong with deleteing the user"
         }
-        if_empty = {
-            "message" : "Enter in required data"
-        }
         if (user_password == ''):
                 return Response(json.dumps(if_empty),
                                 mimetype='application/json',
@@ -223,6 +230,8 @@ def tweeter_user():
                     return Response(json.dumps(fail_del, default=str),
                                                 mimetype="application/json",
                                                 status=409)
+        except mariadb.DatabaseError:
+            print('Something went wrong with connecting to database')
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:
@@ -256,11 +265,27 @@ def tweeter_user():
         edit_bio = data.get("bio")
         edit_email = data.get("email")
         edit_username = data.get("username")
-        edit_birthday = data.get("birthday")
+        edit_birthday = data.get("birthdate")
         edit_img = data.get("imageURL")
         patch_fail = {
             "message" : "failed to match the login token to a profile"
         }
+        if(edit_bio != None and len(edit_bio) > 100):
+                    return Response(json.dumps(bio_error,default=str),
+                                mimetype='application/json',
+                                status=409)
+        if(edit_birthday!= None):
+            try:
+                datetime.datetime.strptime(edit_birthday, '%Y-%m-%d')
+            except ValueError:
+                return Response(json.dumps(birthday_wrong, default=str),
+                                    mimetype='application/json',
+                                    status=409)
+        if(edit_email != None):
+            if(re.search(pattern, edit_email) == None):
+                    return Response(json.dumps(invalid_email,default=str),
+                                mimetype='application/json',
+                                status=409)
         try:
             if (len(edit_token) == 32):
                 conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
@@ -311,6 +336,8 @@ def tweeter_user():
                 return Response(json.dumps(patch_fail, default=str),
                                     mimetype="application/json",
                                     status=409)
+        except mariadb.DatabaseError:
+            print('Something went wrong with connecting to database')
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:
