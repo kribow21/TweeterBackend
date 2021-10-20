@@ -73,6 +73,8 @@ def login():
                 return Response(json.dumps(a_user, default=str),
                                             mimetype='application/json',
                                             status=200)
+        except mariadb.DatabaseError:
+            print('Something went wrong with connecting to database')
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:
@@ -121,6 +123,8 @@ def login():
                 return Response(json.dumps(invalid, default=str),
                                 mimetype="application/json",
                                 status=409)
+        except mariadb.DatabaseError:
+            print('Something went wrong with connecting to database')
         except mariadb.DataError: 
             print('Something went wrong with your data')
         except mariadb.OperationalError:

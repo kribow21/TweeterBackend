@@ -23,8 +23,8 @@ def tweeter_user():
             "messgae" : "please use a valid email"
                     }
     pattern = "[a-zA-Z0-9]+@[a-zA-Z]+\.(com|edu|net)"
-    bio_error = {
-        "message" : "Length of bio exceeds limit"
+    len_error = {
+        "message" : "Length of input exceeds limit"
     }
     if request.method == "POST":
         data = request.json
@@ -33,8 +33,9 @@ def tweeter_user():
         user_password = data.get("password")   
         user_birthday = data.get("birthdate")
         user_bio = data.get("bio")
-        user_image = data.get("image_URL")
+        user_image = data.get("imageUrl")
         try:
+            #datetime is a module that has a class called datetime that has the proper format to check if the passed datetime match
             datetime.datetime.strptime(user_birthday, '%Y-%m-%d')
         except ValueError:
             return Response(json.dumps(birthday_wrong, default=str),
@@ -42,36 +43,36 @@ def tweeter_user():
                                 status=409)
         try:
             if (user_email == ''):
-                return Response(json.dumps(if_empty),
+                return Response(json.dumps(if_empty, default=str),
                                 mimetype='application/json',
                                 status=409)
-            elif (user_username == ''):
-                return Response(json.dumps(if_empty),
+            elif (len(user_username) > 31 and len(user_username) > 0):
+                return Response(json.dumps(len_error, default=str),
                                 mimetype='application/json',
                                 status=409)
-            elif (user_password == ''):
-                return Response(json.dumps(if_empty),
+            elif (len(user_password) > 21 and len(user_password) > 0):
+                return Response(json.dumps(len_error,default=str),
                                 mimetype='application/json',
                                 status=409)
+            #used regular expression to match the passed email to the pattern above
             if(re.search(pattern, user_email) == None):
                 return Response(json.dumps(invalid_email,default=str),
                                 mimetype='application/json',
                                 status=409)
-            if(len(user_bio) > 100):
-                return Response(json.dumps(bio_error,default=str),
+            if(len(user_bio) > 101):
+                return Response(json.dumps(len_error,default=str),
                                 mimetype='application/json',
                                 status=409)
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
             cursor.execute("INSERT INTO user(email, username, password, birthday, bio, image_URL) VALUES (?,?,?,?,?,?)",[user_email,user_username,user_password, user_birthday, user_bio, user_image])
-        #in order to send back at token you need the userid and token in the data user_session table created
+        #in order to send back a token you need to create a token in the data user_session table created with the selected id 
             cursor.execute("SELECT id FROM user WHERE username=?",[user_username,])
             userID = cursor.fetchone()
-            print(userID)
             tokenID = uuid4().hex
             cursor.execute("INSERT INTO user_session(login_token, user_id) VALUES (?, ?)",[tokenID, userID[0],])
             conn.commit()
-        #using a join to bring together all the info i need to return to the client and then organizing it in the format expected
+        #using a join to bring together all the info needed to return to the client and then organizing it in the format expected
             cursor.execute("SELECT user_session.user_id, user.email, user.username, user.bio, user.birthday, user.image_URL, user_session.login_token FROM user_session INNER JOIN user ON user_session.user_id=user.id WHERE id=?",[userID[0],])
             login_info = cursor.fetchone()
             print(login_info)
@@ -81,7 +82,7 @@ def tweeter_user():
                 "username" : login_info[2],
                 "bio" : login_info[3],
                 "birthdate" : login_info[4],
-                "imageURL" : login_info[5],
+                "imageUrl" : login_info[5],
                 "loginToken" : login_info[6]
             }
             return Response(json.dumps(login_resp, default=str),
@@ -117,7 +118,7 @@ def tweeter_user():
     elif request.method == "GET":
         client_params = request.args
         print(client_params)
-    #an if for if the client sent in paramas and else if the client sent in NO paramas
+    #if the client sent in paramas and else if the client sent in NO paramas
         try:
             if(len(client_params) == 1):
                 client = client_params.get("userId")
@@ -131,7 +132,7 @@ def tweeter_user():
                     "username" : user_info[2],
                     "bio" : user_info[3],
                     "birthdate" : user_info[4],
-                    "imageURL" : user_info[5],
+                    "imageUrl" : user_info[5],
                 }
                 return Response(json.dumps(a_user, default=str),
                                             mimetype='application/json',
@@ -141,7 +142,7 @@ def tweeter_user():
                 cursor = conn.cursor()
                 cursor.execute("SELECT * FROM user")
                 all_users = cursor.fetchall()
-            #loops through all the databases info to put in expected format for response
+            #loops through all the user databases info to put in expected format for response
                 user_list = []
                 for user in all_users:
                     getDict = {
@@ -150,7 +151,7 @@ def tweeter_user():
                         "username" : user[2],
                         "bio" : user[3],
                         "birthdate" : user[4],
-                        "imageURL" : user[5]
+                        "imageUrl" : user[5]
                         }
                     user_list.append(getDict)
                 return Response(json.dumps(user_list, default=str),
@@ -185,9 +186,7 @@ def tweeter_user():
 
     elif request.method == "DELETE":
         data = request.json
-        print(data)
         user_password = data.get("password")
-        print(user_password)
         user_token = data.get("loginToken")
         sucess_del = {
             "message" : "user now deleted"
@@ -195,7 +194,8 @@ def tweeter_user():
         fail_del = {
             "message" : "something went wrong with deleteing the user"
         }
-        if (user_password == ''):
+        #checking passed data 
+        if (len(user_password) > 21 and len(user_password) > 0):
                 return Response(json.dumps(if_empty),
                                 mimetype='application/json',
                                 status=409)
@@ -218,6 +218,7 @@ def tweeter_user():
                     return Response(json.dumps(fail_del, default=str),
                                 mimetype="application/json",
                                 status=409)
+            #first checks if the token is in the db, then id the password is in the db and if they are and match then they have the permission to delete the user
             if (valid_token[0] == user_token and valid_pass[0] == user_password):
                 cursor.execute("DELETE FROM user_session WHERE login_token=?",[valid_token[0]])
                 cursor.execute("DELETE FROM user WHERE password=?",[user_password,])
@@ -266,12 +267,12 @@ def tweeter_user():
         edit_email = data.get("email")
         edit_username = data.get("username")
         edit_birthday = data.get("birthdate")
-        edit_img = data.get("imageURL")
+        edit_img = data.get("imageUrl")
         patch_fail = {
             "message" : "failed to match the login token to a profile"
         }
         if(edit_bio != None and len(edit_bio) > 100):
-                    return Response(json.dumps(bio_error,default=str),
+                    return Response(json.dumps(len_error,default=str),
                                 mimetype='application/json',
                                 status=409)
         if(edit_birthday!= None):
@@ -286,10 +287,16 @@ def tweeter_user():
                     return Response(json.dumps(invalid_email,default=str),
                                 mimetype='application/json',
                                 status=409)
+        if (edit_username != None and len(edit_username) > 31):
+                    return Response(json.dumps(len_error),
+                                mimetype='application/json',
+                                status=409)
+        #checks passed data before connecting to db
         try:
             if (len(edit_token) == 32):
                 conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
                 cursor = conn.cursor()
+                #from the token grab the userid to then make changes to the users info
                 cursor.execute("SELECT user_id FROM user_session WHERE login_token=?",[edit_token,])
                 varified_user = cursor.fetchone()
                 if (len(varified_user) == 1):
@@ -309,25 +316,24 @@ def tweeter_user():
                             conn.commit()
                             cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
                             user_info = cursor.fetchone()
-                        elif "birthday" in edit_keys:
+                        elif "birthdate" in edit_keys:
                             cursor.execute("UPDATE user set birthday=? WHERE id=?",[edit_birthday, varified_user[0]])
                             conn.commit()
                             cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
                             user_info = cursor.fetchone()
-                        elif "imageURL" in edit_keys:
+                        elif "imageUrl" in edit_keys:
                             cursor.execute("UPDATE user set image_URL=? WHERE id=?",[edit_img, varified_user[0]])
                             conn.commit()
                             cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
                             user_info = cursor.fetchone()
-
                     finally:
                             a_user = {
                                 "userId" : user_info[0],
                                 "email" : user_info[1],
                                 "username" : user_info[2],
                                 "bio" : user_info[3],
-                                "birthday" : user_info[4],
-                                "imageURL" : user_info[5],
+                                "birthdate" : user_info[4],
+                                "imageUrl" : user_info[5],
                             }
                             return Response(json.dumps(a_user, default=str),
                                                     mimetype='application/json',
