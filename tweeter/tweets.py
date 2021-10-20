@@ -51,6 +51,8 @@ def tweets():
             return Response(json.dumps(tweet_fail,default=str),
                                 mimetype='application/json',
                                 status=409)
+    except mariadb.DatabaseError:
+        print('Something went wrong with connecting to database')
     except mariadb.DataError: 
         print('Something went wrong with your data')
     except mariadb.OperationalError:
@@ -121,6 +123,8 @@ def tweets():
             return Response(json.dumps(tweets_list, default=str),
                                         mimetype='application/json',
                                         status=200)
+    except mariadb.DatabaseError:
+        print('Something went wrong with connecting to database')
     except mariadb.DataError: 
         print('Something went wrong with your data')
     except mariadb.OperationalError:
@@ -192,6 +196,8 @@ def tweets():
             return Response(json.dumps(patch_fail, default=str),
                                 mimetype='application/json',
                                 status=409)
+    except mariadb.DatabaseError:
+        print('Something went wrong with connecting to database')
     except mariadb.DataError: 
         print('Something went wrong with your data')
     except mariadb.OperationalError:
@@ -248,6 +254,8 @@ def tweets():
                     return Response(json.dumps(delete_fail, default=str),
                                     mimetype='application/json',
                                     status=409)
+            except mariadb.DatabaseError:
+                print('Something went wrong with connecting to database')
             except mariadb.DataError: 
                 print('Something went wrong with your data')
             except mariadb.OperationalError:
