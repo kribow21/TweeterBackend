@@ -15,14 +15,15 @@ def tweetlikes():
     if request.method == "POST":
         data = request.json
         tweetID = data.get("tweetId")
+        token = data.get("loginToken")
         repeat = {
             "message" : "conflict, user already liked"
         }
         resp = {
             "message" : "like OK"
         }
+        #check data before connecting to db
     try:
-        token = data.get("loginToken")
         if (len(token) == 32 and isinstance(tweetID, int) == True):
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
@@ -37,7 +38,7 @@ def tweetlikes():
                 return Response(json.dumps(resp, default=str),
                                     mimetype='application/json',
                                     status=200)
-            #if it hits this the like already exsists
+            #if it hits this, the like already exsists
             elif(len(already_liked) == 2):
                 return Response(json.dumps(repeat, default=str),
                                 mimetype='application/json',
