@@ -306,22 +306,22 @@ def tweeter_user():
                             conn.commit()
                             cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
                             user_info = cursor.fetchone()
-                        elif "email" in edit_keys:
+                        if "email" in edit_keys:
                             cursor.execute("UPDATE user set email=? WHERE id=?",[edit_email, varified_user[0]])
                             conn.commit()
                             cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
                             user_info = cursor.fetchone()
-                        elif "username" in edit_keys:
+                        if "username" in edit_keys:
                             cursor.execute("UPDATE user set username=? WHERE id=?",[edit_username, varified_user[0]])
                             conn.commit()
                             cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
                             user_info = cursor.fetchone()
-                        elif "birthdate" in edit_keys:
+                        if "birthdate" in edit_keys:
                             cursor.execute("UPDATE user set birthday=? WHERE id=?",[edit_birthday, varified_user[0]])
                             conn.commit()
                             cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])
                             user_info = cursor.fetchone()
-                        elif "imageUrl" in edit_keys:
+                        if "imageUrl" in edit_keys:
                             cursor.execute("UPDATE user set image_URL=? WHERE id=?",[edit_img, varified_user[0]])
                             conn.commit()
                             cursor.execute("SELECT id, email, username, bio, birthday, image_URL FROM user WHERE id=?",[varified_user[0],])

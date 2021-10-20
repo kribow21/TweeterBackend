@@ -27,7 +27,7 @@ def login():
         fail_login = {
             "message" : "Failed to login"
         }
-    #checks if things are empty or not correct email format before opening cursor
+    #checks if things are empty or not correct email format before opening db
         if (user_email == ''):
             return Response(json.dumps(if_empty),
                                 mimetype='application/json',
@@ -50,6 +50,7 @@ def login():
                     return Response(json.dumps(fail_login, default=str),
                                             mimetype='application/json',
                                             status=409)
+            #if userid's correspond then create/insert a token for their session
             elif (user_pass == user_info[0]):
                 tokenID = uuid4().hex
                 cursor.execute("INSERT INTO user_session (login_token,user_id) VALUES (?,?)",[tokenID,user_info[1]])
@@ -66,9 +67,9 @@ def login():
                     "email" : select_user[1],
                     "username" : select_user[2],
                     "bio" : select_user[3],
-                    "birthday" : select_user[4],
+                    "birthdate" : select_user[4],
                     "loginToken" : select_user[5],
-                    "imageURL" : select_user[6]
+                    "imageUrl" : select_user[6]
                 }
                 return Response(json.dumps(a_user, default=str),
                                             mimetype='application/json',
@@ -99,6 +100,7 @@ def login():
                 print('connection closed')
             else:
                 print('the connection never opened, nothing to close')
+
     if request.method == "DELETE":
         data = request.json
         user_token = data.get("loginToken")
