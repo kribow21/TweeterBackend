@@ -36,7 +36,7 @@ def commentlikes():
                     conn.commit()
                     return Response(json.dumps(resp, default=str),
                                         mimetype='application/json',
-                                        status=200)
+                                        status=201)
             #if it hits this the like already exsists
                 elif(len(already_liked) == 2):
                     return Response(json.dumps(repeat, default=str),
@@ -46,7 +46,7 @@ def commentlikes():
             else:
                 return Response(json.dumps(data_error, default=str),
                                     mimetype='application/json',
-                                    status=409)
+                                    status=400)
         except mariadb.DatabaseError:
             print('Something went wrong with connecting to database')
         except mariadb.DataError: 
@@ -170,11 +170,11 @@ def commentlikes():
             else:
                 return Response(json.dumps(delete_fail, default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=401)
         else:
             return Response(json.dumps(data_error, default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
     except mariadb.DatabaseError:
         print('Something went wrong with connecting to database')
     except mariadb.DataError: 

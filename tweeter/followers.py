@@ -41,7 +41,7 @@ def get_followers():
             else:
                 return Response(json.dumps(data_error, default=str),
                                             mimetype="application/json",
-                                            status=409)
+                                            status=400)
         except mariadb.DatabaseError:
             print('Something went wrong with connecting to database')
         except mariadb.DataError: 

@@ -34,14 +34,14 @@ def get_follows():
             else:
                 return Response(json.dumps(data_error, default=str),
                                         mimetype='application/json',
-                                        status=409)
+                                        status=401)
         #use the collected userID to insert the relationship into the table
             try:
                 cursor.execute("INSERT INTO follow (follower, followed) VALUES (?,?)",[follower_user_id[0], followedID])
                 conn.commit()
                 return Response(json.dumps(resp, default=str),
                                         mimetype='application/json',
-                                        status=200)
+                                        status=201)
             except mariadb.DataError: 
                 print('Something went wrong with your data')
             except mariadb.OperationalError:
@@ -113,7 +113,7 @@ def get_follows():
             else:
                 return Response(json.dumps(data_error, default=str),
                                             mimetype="application/json",
-                                            status=409)
+                                            status=400)
         except mariadb.DatabaseError:
             print('Something went wrong with connecting to database')
         except mariadb.DataError: 
@@ -172,11 +172,11 @@ def get_follows():
                 else:
                     return Response(json.dumps(delete_fail, default=str),
                                     mimetype='application/json',
-                                    status=409)
+                                    status=401)
             else:
                 return Response(json.dumps(data_error, default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         except mariadb.DatabaseError:
             print('Something went wrong with connecting to database')
         except mariadb.DataError: 

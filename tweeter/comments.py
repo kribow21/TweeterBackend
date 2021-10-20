@@ -44,15 +44,15 @@ def comments():
                 }
                 return Response(json.dumps(resp, default=str),
                                 mimetype='application/json',
-                                status=200)
+                                status=201)
             else:
                 return Response(json.dumps(content_error,default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=401)
         else:
             return Response(json.dumps(comment_fail,default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
     except mariadb.DataError: 
         print('Something went wrong with your data')
     except mariadb.OperationalError:
@@ -108,7 +108,7 @@ def comments():
         else:
             return Response(json.dumps(data_error, default=str),
                                             mimetype="application/json",
-                                            status=409)
+                                            status=400)
     except mariadb.DatabaseError:
         print('Something went wrong with connecting to database')
     except mariadb.DataError: 
@@ -151,15 +151,15 @@ def comments():
         if (com_id == ''):
             return Response(json.dumps(if_empty, default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         if (content_edit == ''):
             return Response(json.dumps(if_empty, default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         if (len(com_token) != 32):
             return Response(json.dumps(patch_fail, default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         try:
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
@@ -188,7 +188,7 @@ def comments():
             else:
                 return Response(json.dumps(patch_fail, default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=401)
         except mariadb.DatabaseError:
             print('Something went wrong with connecting to database')
         except mariadb.DataError: 
@@ -248,7 +248,7 @@ def comments():
                 else:
                     return Response(json.dumps(delete_fail, default=str),
                                     mimetype='application/json',
-                                    status=409)
+                                    status=401)
             except mariadb.DatabaseError:
                 print('Something went wrong with connecting to database')
             except mariadb.DataError: 
@@ -278,4 +278,4 @@ def comments():
         else:
             return Response(json.dumps(data_error, default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)

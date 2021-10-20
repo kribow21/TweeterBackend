@@ -31,15 +31,15 @@ def login():
         if (user_email == ''):
             return Response(json.dumps(if_empty),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         elif(re.search(pattern, user_email) == None):
             return Response(json.dumps(invalid_email,default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         elif (user_pass == ''):
             return Response(json.dumps(if_empty),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         try:
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
@@ -49,7 +49,7 @@ def login():
             if(user_info == None):
                     return Response(json.dumps(fail_login, default=str),
                                             mimetype='application/json',
-                                            status=409)
+                                            status=401)
             #if userid's correspond then create/insert a token for their session
             elif (user_pass == user_info[0]):
                 tokenID = uuid4().hex
@@ -58,7 +58,7 @@ def login():
             else:
                 return Response(json.dumps(fail_login, default=str),
                                             mimetype='application/json',
-                                            status=409)
+                                            status=401)
             if (user_info != None):
                 cursor.execute("SELECT user_session.user_id, user.email, user.username, user.bio, user.birthday, user_session.login_token, user.image_URL FROM user_session INNER JOIN user ON user_session.user_id=user.id WHERE user_id=?",[user_info[1],])
                 select_user = cursor.fetchone()
@@ -124,7 +124,7 @@ def login():
             else:
                 return Response(json.dumps(invalid, default=str),
                                 mimetype="application/json",
-                                status=409)
+                                status=401)
         except mariadb.DatabaseError:
             print('Something went wrong with connecting to database')
         except mariadb.DataError: 

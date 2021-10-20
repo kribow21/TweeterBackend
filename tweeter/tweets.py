@@ -42,15 +42,15 @@ def tweets():
                 }
                 return Response(json.dumps(tweet_resp, default=str),
                             mimetype='application/json',
-                            status=200)
+                            status=201)
             else:
                     return Response(json.dumps(content_error,default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         else:
             return Response(json.dumps(tweet_fail,default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=401)
     except mariadb.DatabaseError:
         print('Something went wrong with connecting to database')
     except mariadb.DataError: 
@@ -163,15 +163,15 @@ def tweets():
         if (tweet_id == ''):
                     return Response(json.dumps(if_empty, default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         if (tweet_content == '' or len(tweet_content) > 200 ):
                     return Response(json.dumps(if_empty, default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         if (len(tweet_token) != 32):
             return Response(json.dumps(patch_fail, default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
     try:
         conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
         cursor = conn.cursor()
@@ -195,7 +195,7 @@ def tweets():
         else:
             return Response(json.dumps(patch_fail, default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=401)
     except mariadb.DatabaseError:
         print('Something went wrong with connecting to database')
     except mariadb.DataError: 
@@ -253,7 +253,7 @@ def tweets():
                 else:
                     return Response(json.dumps(delete_fail, default=str),
                                     mimetype='application/json',
-                                    status=409)
+                                    status=400)
             except mariadb.DatabaseError:
                 print('Something went wrong with connecting to database')
             except mariadb.DataError: 
@@ -283,4 +283,4 @@ def tweets():
         else:
             return Response(json.dumps(data_error, default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=401)

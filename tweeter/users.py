@@ -87,7 +87,7 @@ def tweeter_user():
             }
             return Response(json.dumps(login_resp, default=str),
                             mimetype='application/json',
-                            status=200)
+                            status=201)
         except mariadb.DatabaseError:
             print('Something went wrong with connecting to database')
         except mariadb.DataError: 
@@ -198,11 +198,11 @@ def tweeter_user():
         if (len(user_password) > 21 and len(user_password) > 0):
                 return Response(json.dumps(if_empty),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         if (len(user_token) != 32):
             return Response(json.dumps(fail_del),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         try:
             conn = mariadb.connect(user=dbcreds.user,password=dbcreds.password,host=dbcreds.host,port=dbcreds.port,database=dbcreds.database)
             cursor = conn.cursor()
@@ -211,13 +211,13 @@ def tweeter_user():
             if(len(valid_token) != 1):
                     return Response(json.dumps(fail_del, default=str),
                                 mimetype="application/json",
-                                status=409)
+                                status=401)
             cursor.execute("SELECT password FROM user WHERE password=?",[user_password,])
             valid_pass = cursor.fetchone()
             if(valid_pass == None):
                     return Response(json.dumps(fail_del, default=str),
                                 mimetype="application/json",
-                                status=409)
+                                status=401)
             #first checks if the token is in the db, then id the password is in the db and if they are and match then they have the permission to delete the user
             if (valid_token[0] == user_token and valid_pass[0] == user_password):
                 cursor.execute("DELETE FROM user_session WHERE login_token=?",[valid_token[0]])
@@ -230,7 +230,7 @@ def tweeter_user():
                 else:
                     return Response(json.dumps(fail_del, default=str),
                                                 mimetype="application/json",
-                                                status=409)
+                                                status=400)
         except mariadb.DatabaseError:
             print('Something went wrong with connecting to database')
         except mariadb.DataError: 
@@ -274,23 +274,23 @@ def tweeter_user():
         if(edit_bio != None and len(edit_bio) > 100):
                     return Response(json.dumps(len_error,default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         if(edit_birthday!= None):
             try:
                 datetime.datetime.strptime(edit_birthday, '%Y-%m-%d')
             except ValueError:
                 return Response(json.dumps(birthday_wrong, default=str),
                                     mimetype='application/json',
-                                    status=409)
+                                    status=400)
         if(edit_email != None):
             if(re.search(pattern, edit_email) == None):
                     return Response(json.dumps(invalid_email,default=str),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         if (edit_username != None and len(edit_username) > 31):
                     return Response(json.dumps(len_error),
                                 mimetype='application/json',
-                                status=409)
+                                status=400)
         #checks passed data before connecting to db
         try:
             if (len(edit_token) == 32):
@@ -341,7 +341,7 @@ def tweeter_user():
             else:
                 return Response(json.dumps(patch_fail, default=str),
                                     mimetype="application/json",
-                                    status=409)
+                                    status=401)
         except mariadb.DatabaseError:
             print('Something went wrong with connecting to database')
         except mariadb.DataError: 
