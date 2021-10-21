@@ -4,7 +4,7 @@ from flask import Flask, request, Response
 import mariadb
 import dbcreds
 import json
-
+#a user following another user. followID refers to the person being followed follower is the user passing the token
 @app.route("/api/follows", methods=["GET","POST","DELETE"])
 def get_follows():
     conn = None
