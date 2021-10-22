@@ -116,7 +116,7 @@ def tweets():
                 "username" : tweet[2],
                 "content" : tweet[3],
                 "createdAt" : tweet[4],
-                "userImageURL" : tweet[5],
+                "userImageUrl" : tweet[5],
                 "tweetImageUrl" : tweet[6]
                     }
                 tweets_list.append(getDict)
