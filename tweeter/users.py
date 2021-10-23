@@ -46,11 +46,11 @@ def tweeter_user():
                 return Response(json.dumps(if_empty, default=str),
                                 mimetype='application/json',
                                 status=409)
-            elif (len(user_username) > 31 and len(user_username) > 0):
+            elif (len(user_username) > 31 or len(user_username) < 1):
                 return Response(json.dumps(len_error, default=str),
                                 mimetype='application/json',
                                 status=409)
-            elif (len(user_password) > 21 and len(user_password) > 0):
+            elif (len(user_password) > 21 or len(user_password) < 1):
                 return Response(json.dumps(len_error,default=str),
                                 mimetype='application/json',
                                 status=409)
@@ -195,7 +195,7 @@ def tweeter_user():
             "message" : "something went wrong with deleteing the user"
         }
         #checking passed data 
-        if (len(user_password) > 21 and len(user_password) > 0):
+        if (len(user_password) > 21 or len(user_password) < 1):
                 return Response(json.dumps(if_empty),
                                 mimetype='application/json',
                                 status=400)
